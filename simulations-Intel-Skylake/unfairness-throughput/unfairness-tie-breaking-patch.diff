@@ -1,0 +1,88 @@
+diff --git a/simulator/common/simulator_core.py b/simulator/common/simulator_core.py
+index 9e95f1b..6d8c9b9 100644
+--- a/simulator/common/simulator_core.py
++++ b/simulator/common/simulator_core.py
+@@ -660,6 +660,83 @@ def unf_stp(benchmark_set, solution, max_bandwidth=float('Inf'), remaining_ways=
+ 	return unfairness_max_throughput(benchmark_set, solution, max_bandwidth, remaining_ways)
+ 
+ 
++def unf_hmsp(benchmark_set, solution, max_bandwidth=float('Inf'), remaining_ways=0):
++	(benchmark_list,final_solution,apps_in_partial_solution)=normalize_solution(benchmark_set, solution,remaining_ways) 
++	throughput_value = 0	
++	
++	slowdown_vector=get_slowdown_vector(benchmark_list,final_solution,max_bandwidth)
++ 
++	##Hmean
++	throughput_value=len(slowdown_vector)/sum([s for s in slowdown_vector])  
++
++	## Pick min that cannot grow with new slowdown values...
++	if remaining_ways>0:
++		## Let's assume that min slowdown unfairness will not get any smaller
++		unfairness_value = max(slowdown_vector) / min(slowdown_vector[0:len(solution)])
++	else:
++		unfairness_value = max(slowdown_vector) / min(slowdown_vector)
++
++	unfairness_value=round(unfairness_value,3)
++	throughput_value=round(throughput_value,3)
++	del slowdown_vector
++	return (unfairness_value,-throughput_value)
++
++
++def unf_gmsp(benchmark_set, solution, max_bandwidth=float('Inf'), remaining_ways=0):
++	(benchmark_list,final_solution,apps_in_partial_solution)=normalize_solution(benchmark_set, solution,remaining_ways) 
++	throughput_value = 0	
++	
++	slowdown_vector=get_slowdown_vector(benchmark_list,final_solution,max_bandwidth)
++ 
++	## Calculate gmean
++	gmean_value=1
++	for slowdown in slowdown_vector:
++		gmean_value *= 1/slowdown
++
++	gmean_value=gmean_value**(1/len(slowdown_vector))
++
++	## Pick min that cannot grow with new slowdown values...
++	if remaining_ways>0:
++		## Let's assume that min slowdown unfairness will not get any smaller
++		unfairness_value = max(slowdown_vector) / min(slowdown_vector[0:len(solution)])
++	else:
++		unfairness_value = max(slowdown_vector) / min(slowdown_vector)
++
++	unfairness_value=round(unfairness_value,3)
++	throughput_value=round(gmean_value,3)
++	del slowdown_vector
++	return (unfairness_value,-throughput_value)
++
++
++def unf_gmeanipc(benchmark_set, solution, max_bandwidth=float('Inf'), remaining_ways=0):
++	(benchmark_list,final_solution,apps_in_partial_solution)=normalize_solution(benchmark_set, solution,remaining_ways) 
++	throughput_value = 0	
++	
++	slowdown_vector=get_slowdown_vector(benchmark_list,final_solution,max_bandwidth)
++	predicted_ipc=[ app.get_ipc_alone()/slowdown_vector[i] for i,app in enumerate(benchmark_list)]
++ 
++ 
++	##Hmean
++	## Calculate throughput
++	throughput_value=1.0
++	for ipc in predicted_ipc:
++		throughput_value *= ipc
++
++	throughput_value=round(throughput_value**(1.0/len(predicted_ipc)),3)
++
++	## Pick min that cannot grow with new slowdown values...
++	if remaining_ways>0:
++		## Let's assume that min slowdown unfairness will not get any smaller
++		unfairness_value = max(slowdown_vector) / min(slowdown_vector[0:len(solution)])
++	else:
++		unfairness_value = max(slowdown_vector) / min(slowdown_vector)
++
++	unfairness_value=round(unfairness_value,3)
++	del slowdown_vector
++	return (unfairness_value,-throughput_value)
++
++
++
+ def fairness_metric(benchmark_set, solution, max_bandwidth=float('Inf'), remaining_ways=0):
+ 	(benchmark_list,final_solution,apps_in_partial_solution)=normalize_solution(benchmark_set, solution,remaining_ways) 
+ 	slowdown_vector=get_slowdown_vector(benchmark_list,final_solution,max_bandwidth)
